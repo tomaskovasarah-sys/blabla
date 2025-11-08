@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>Hubert 2025 - GPS sledování</title>
 <style>
-body { font-family: Arial; padding: 20px; }
-input, button { padding: 10px; margin: 5px 0; width: 100%; max-width: 300px; }
+body { font-family: Arial; padding: 20px; text-align: center; }
+input, button { padding: 15px; margin: 10px 0; width: 90%; max-width: 300px; font-size: 18px; }
+button { background-color: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; }
+button:hover { background-color: #45a049; }
 table { border-collapse: collapse; width: 100%; margin-top: 20px; }
 th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
 th { background-color: #f2f2f2; }
@@ -16,8 +18,8 @@ th { background-color: #f2f2f2; }
 <h1>Hubert 2025 - GPS sledování</h1>
 
 <label for="skupina">Zadejte jméno skupiny:</label><br>
-<input type="text" id="skupina" placeholder="např. Intelektuálky">
-<button onclick="startGPS()">Start sledování</button>
+<input type="text" id="skupina" placeholder="např. Intelektuálky"><br>
+<button onclick="startGPS()">▶️ Start sledování</button>
 
 <table id="tabulka">
 <thead>
@@ -43,28 +45,13 @@ th { background-color: #f2f2f2; }
 <script>
 // ------------------- Firebase config -------------------
 const firebaseConfig = {
-  // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBsfPzK82ppSoRPn9izH6zvmcoFS4AYeS8",
+  apiKey: "TVŮJ_API_KEY",
   authDomain: "stajulucky-f300e.firebaseapp.com",
   databaseURL: "https://stajulucky-f300e-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "stajulucky-f300e",
-  storageBucket: "stajulucky-f300e.firebasestorage.app",
-  messagingSenderId: "360054949387",
-  appId: "1:360054949387:web:22f5d99a5544977a1ca90e",
-  measurementId: "G-ZNZLWQ63LR"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+  storageBucket: "stajulucky-f300e.appspot.com",
+  messagingSenderId: "TVŮJ_SENDER_ID",
+  appId: "TVŮJ_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
@@ -98,20 +85,25 @@ function startGPS(){
   if(!skupinaName){ alert("Zadejte jméno skupiny!"); return; }
   if(!navigator.geolocation){ alert("GPS není podporováno!"); return; }
 
+  alert("Klikněte Povolit GPS v prohlížeči, aby sledování fungovalo."); // upozornění pro uživatele
+
   navigator.geolocation.watchPosition(position=>{
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
 
     bodyGPS.forEach(b=>{
       const td = document.getElementById(b.id);
-      if(td.textContent=="-" && vzdalenost(lat, lon, b.lat, b.lon)<0.1){
+      if(td.textContent=="-" && vzdalenost(lat, lon, b.lat, b.lon)<0.1){ // 100 m
         const cas = new Date().toLocaleTimeString();
         td.textContent = cas;
         database.ref(`skupiny/${skupinaName}/${b.id}`).set({time:cas, lat, lon});
       }
     });
 
-  }, error=>console.error(error), {enableHighAccuracy:true, maximumAge:1000});
+  }, error=>{
+    console.error(error);
+    alert("Chyba GPS: " + error.message);
+  }, {enableHighAccuracy:true, maximumAge:1000});
 }
 </script>
 

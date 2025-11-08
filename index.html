@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Hubert 2025 - GPS sledování</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+input, button { padding: 10px; margin: 5px 0; width: 100%; max-width: 300px; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+th { background-color: #f2f2f2; }
+</style>
+</head>
+<body>
+
+<h1>Hubert 2025 - GPS sledování</h1>
+
+<label for="skupina">Zadejte jméno skupiny:</label><br>
+<input type="text" id="skupina" placeholder="např. Intelektuálky">
+<button onclick="startGPS()">Start sledování</button>
+
+<table id="tabulka">
+<thead>
+<tr>
+<th>Checkpoint</th>
+<th>Čas průjezdu</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Start</td><td id="Start">-</td></tr>
+<tr><td>Bod 1</td><td id="Bod1">-</td></tr>
+<tr><td>Bod 2</td><td id="Bod2">-</td></tr>
+<tr><td>Bod 3</td><td id="Bod3">-</td></tr>
+<tr><td>Bod 4</td><td id="Bod4">-</td></tr>
+<tr><td>Bod 5</td><td id="Bod5">-</td></tr>
+<tr><td>Cíl</td><td id="Cil">-</td></tr>
+</tbody>
+</table>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// ------------------- Firebase config -------------------
+const firebaseConfig = {
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBsfPzK82ppSoRPn9izH6zvmcoFS4AYeS8",
+  authDomain: "stajulucky-f300e.firebaseapp.com",
+  databaseURL: "https://stajulucky-f300e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "stajulucky-f300e",
+  storageBucket: "stajulucky-f300e.firebasestorage.app",
+  messagingSenderId: "360054949387",
+  appId: "1:360054949387:web:22f5d99a5544977a1ca90e",
+  measurementId: "G-ZNZLWQ63LR"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// ------------------- Checkpointy -------------------
+const bodyGPS = [
+  {id:"Start", lat:50.6204, lon:13.87294},
+  {id:"Bod1", lat:50.61488, lon:13.85943},
+  {id:"Bod2", lat:50.60936, lon:13.85474},
+  {id:"Bod3", lat:50.62319, lon:13.83896},
+  {id:"Bod4", lat:50.63137, lon:13.83544},
+  {id:"Bod5", lat:50.62239, lon:13.84586},
+  {id:"Cil", lat:50.62085, lon:13.8729}
+];
+
+// ------------------- Funkce pro vzdálenost -------------------
+function vzdalenost(lat1, lon1, lat2, lon2){
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R*c; // km
+}
+
+// ------------------- GPS sledování -------------------
+let skupinaName = "";
+
+function startGPS(){
+  skupinaName = document.getElementById("skupina").value.trim();
+  if(!skupinaName){ alert("Zadejte jméno skupiny!"); return; }
+  if(!navigator.geolocation){ alert("GPS není podporováno!"); return; }
+
+  navigator.geolocation.watchPosition(position=>{
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    bodyGPS.forEach(b=>{
+      const td = document.getElementById(b.id);
+      if(td.textContent=="-" && vzdalenost(lat, lon, b.lat, b.lon)<0.1){
+        const cas = new Date().toLocaleTimeString();
+        td.textContent = cas;
+        database.ref(`skupiny/${skupinaName}/${b.id}`).set({time:cas, lat, lon});
+      }
+    });
+
+  }, error=>console.error(error), {enableHighAccuracy:true, maximumAge:1000});
+}
+</script>
+
+</body>
+</html>
